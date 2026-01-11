@@ -1,4 +1,3 @@
-// CTA.jsx
 import { Sword, Play, Tv } from 'lucide-react';
 
 const CTA = () => {
@@ -14,9 +13,11 @@ const CTA = () => {
       <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto font-medium">Prove your coding speed. Climb the ranks. Become legendary. Your first match is waiting.</p>
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <button className="bg-emerald-400 text-black px-12 py-5 rounded-2xl font-black text-xl flex items-center gap-3 shadow-[0_0_50px_rgba(52,211,153,0.3)] hover:scale-105 transition-all">
-          ENTER THE ARENA <Play fill="black" size={20}/>
-        </button>
+        <a href="/#modes">
+            <button className="bg-emerald-400 text-black px-12 py-5 rounded-2xl font-black text-xl flex items-center gap-3 shadow-[0_0_50px_rgba(52,211,153,0.3)] hover:scale-105 transition-all">
+            ENTER THE ARENA <Play fill="black" size={20}/>
+            </button>
+        </a>
         <button className="border border-white/20 bg-white/5 backdrop-blur-sm text-white px-12 py-5 rounded-2xl font-black text-xl flex items-center gap-3 hover:bg-white/10 transition-all">
           WATCH A MATCH <Tv size={20}/>
         </button>

@@ -1,8 +1,11 @@
 import { Timer, Zap, Brain, Bug, BarChart3, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const modes = [
   {
+    id: "rapid",
     title: "Rapid Duel",
+    link: "/rapid-duel",
     quote: "Think fast, code clean",
     desc: "5-10 minute time limit. Balanced difficulty. Strategy meets speed.",
     time: "5-10 min",
@@ -11,7 +14,9 @@ const modes = [
     icon: <Timer />
   },
   {
+    id: "blitz",
     title: "Blitz Duel",
+    link: "/rapid-duel", // Placeholder: Directing to Rapid Duel for now
     quote: "Fastest correct code wins",
     desc: "1-3 minute sprints. Simple problems. Pure speed and instincts.",
     time: "1-3 min",
@@ -20,7 +25,9 @@ const modes = [
     icon: <Zap />
   },
   {
+    id: "logic",
     title: "Logic Battle",
+    link: "/rapid-duel", // Placeholder: Directing to Rapid Duel for now
     quote: "Pure problem-solving",
     desc: "No full coding. Arrange logic blocks. Drag & drop challenges.",
     time: "3-5 min",
@@ -29,7 +36,9 @@ const modes = [
     icon: <Brain />
   },
   {
+    id: "bug",
     title: "Bug Hunt Arena",
+    link: "/bug-hunt",
     quote: "Find. Fix. Win.",
     desc: "Debug broken snippets. Spot errors faster than your opponent.",
     time: "2-4 min",
@@ -38,7 +47,9 @@ const modes = [
     icon: <Bug />
   },
   {
+    id: "complexity",
     title: "Complexity Duel",
+    link: "/complexity-duel",
     quote: "Outthink your opponent",
     desc: "Choose the optimal algorithm. Time & space complexity focused.",
     time: "5-8 min",
@@ -71,9 +82,11 @@ const BattleModes = () => {
               <span className="bg-gray-800 px-3 py-1 rounded-full uppercase tracking-widest">{mode.difficulty}</span>
             </div>
 
-            <button className="flex items-center gap-2 text-white font-bold text-sm group-hover:text-cyan-400 transition-colors">
-              Start Matchmaking <ChevronRight size={16} />
-            </button>
+            <Link to={mode.link}>
+                <button className="flex items-center gap-2 text-white font-bold text-sm group-hover:text-cyan-400 transition-colors">
+                Start Matchmaking <ChevronRight size={16} />
+                </button>
+            </Link>
           </div>
         ))}
       </div>

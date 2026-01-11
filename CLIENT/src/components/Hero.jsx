@@ -1,4 +1,5 @@
 import { Users, Zap, Code2, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Hero = () => {
   return (
@@ -42,12 +43,16 @@ const Hero = () => {
       </p>
 
       <div className="flex flex-col sm:flex-row gap-4 z-10">
-        <button className="bg-emerald-400 text-black px-10 py-4 rounded-xl font-black text-lg flex items-center gap-2 shadow-[0_0_30px_rgba(52,211,153,0.3)] hover:scale-105 transition-all">
-          START A DUEL <ChevronRight />
-        </button>
-        <button className="border border-cyan-400 text-cyan-400 px-10 py-4 rounded-xl font-black text-lg hover:bg-cyan-400/10 transition-all">
-          VIEW GAME MODES
-        </button>
+        <a href="/#modes">
+          <button className="bg-emerald-400 text-black px-10 py-4 rounded-xl font-black text-lg flex items-center gap-2 shadow-[0_0_30px_rgba(52,211,153,0.3)] hover:scale-105 transition-all">
+            START A DUEL <ChevronRight />
+          </button>
+        </a>
+        <a href="/#modes">
+          <button className="border border-cyan-400 text-cyan-400 px-10 py-4 rounded-xl font-black text-lg hover:bg-cyan-400/10 transition-all">
+            VIEW GAME MODES
+          </button>
+        </a>
       </div>
 
       {/* Stats Bar */}
