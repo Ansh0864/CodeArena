@@ -12,7 +12,8 @@ const ValidateUser = require('./utils/userValidate');
 const wrapAsync = require('./utils/wrapAsync');
 const app = express();
 const PORT = 3000;
-
+const { Server } = require('socket.io')
+const http = require('http')
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -29,9 +30,10 @@ main().catch(err => console.log(err));
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
 
+
 app.use(cookieParser(process.env.SECRET))
 app.set('trust proxy', 1);
-app.use(session({
+const sessionMiddleware = session({
     secret: process.env.SECRET,
     resave: false,
     saveUninitialized: false,
@@ -41,7 +43,25 @@ app.use(session({
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000
     }
-}))
+});
+
+app.use(sessionMiddleware)
+
+
+// Creating an HTTP Server
+const server = http.createServer(app)
+
+// creating socketio server
+const io = new Server(server, {
+    cors: {
+        origin: process.env.CLIENT_URL,
+        credentials: true
+    }
+})
+io.use((socket, next) => {
+    sessionMiddleware(socket.request, {}, next);
+});
+
 
 //Passport requirements
 app.use(passport.initialize())
@@ -114,7 +134,7 @@ app.post('/login', (req, res, next) => {
 });
 
 
-app.get('/logout', (req, res,next) => {
+app.get('/logout', (req, res, next) => {
     try {
         req.logout((err) => {
             if (err) {
@@ -139,6 +159,18 @@ app.get('/isAuthenticated', (req, res) => {
     }
 })
 
+
+// SOCKET IO Routes
+io.on('connection', (socket) => {
+    console.log('User Connected:', socket.id)
+    const user = socket.request.session?.passport?.user;
+    console.log('Connected user id:', user);
+
+    socket.on("disconnect", () => {
+        console.log("User disconnected:", socket.id);
+    });
+})
+
 // Health check
 app.get('/', (req, res) => {
     res.json({ status: 'ok', message: 'CodeArena server running' });
@@ -151,8 +183,6 @@ app.use((err, req, res, next) => {
 })
 
 
-app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
-});
+server.listen(PORT)
 
 
