@@ -1,9 +1,10 @@
-import { Sword, LogOut } from 'lucide-react';
+import { Sword, LogOut, User as UserIcon } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 
-const Navbar = () => {
-  const { user, logout, getAvatarUrl } = useAuth();
+axios.defaults.withCredentials = true;
+
+const Navbar = ({ user, setUser }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -18,112 +19,87 @@ const Navbar = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await axios.get(`${import.meta.env.VITE_BACKEND_URL}/logout`);
+      setUser(null);
+      navigate('/');
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
   };
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-[#020617]/80 backdrop-blur-md border-b border-white/5 py-4 px-6 md:px-12 flex justify-between items-center transition-all duration-300">
-      
-      {/* LEFT SECTION: Logo & Navigation Swords */}
+    <nav className="fixed top-0 w-full z-50 bg-[#020617]/80 backdrop-blur-md border-b border-white/5 py-4 px-6 md:px-12 flex justify-between items-center">
+
+      {/* LEFT: LOGO */}
       <div className="flex items-center gap-8">
-        
-        {/* 1. LOGO */}
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="relative">
-              <Sword className="text-cyan-400 w-8 h-8 rotate-45 group-hover:rotate-12 transition-transform duration-300" />
-              <div className="absolute inset-0 bg-cyan-400 blur-lg opacity-20 group-hover:opacity-40 transition-opacity"></div>
-          </div>
-          <span className="text-2xl font-black tracking-tighter text-white">
+          <Sword className="text-cyan-400 w-8 h-8 rotate-45 group-hover:rotate-12 transition-transform" />
+          <span className="text-2xl font-black text-white">
             CODE<span className="text-cyan-400">ARENA</span>
           </span>
         </Link>
-
-        {/* 2. SWORD NAVIGATION (Back / Forward) */}
-        <div className="hidden lg:flex items-center gap-2 border-l border-white/10 pl-6">
-          <button 
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-cyan-400 transition-all border border-transparent hover:border-cyan-500/30 group"
-            title="Go Back"
-          >
-            {/* Rotated Sword to point LEFT (-135deg) */}
-            <Sword size={18} className="transform -rotate-[135deg] group-hover:-translate-x-1 transition-transform" />
-          </button>
-          
-          <button 
-            onClick={() => navigate(1)}
-            className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-emerald-400 transition-all border border-transparent hover:border-emerald-500/30 group"
-            title="Go Forward"
-          >
-             {/* Default Sword points diagonal right, slightly adjusted for Forward look (45deg) */}
-             <Sword size={18} className="transform rotate-45 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-
       </div>
-      
-      {/* CENTER NAVIGATION */}
-      <div className="hidden md:flex gap-8 text-sm font-bold text-gray-400 uppercase tracking-wide">
-        <button onClick={() => navigate('/')} className="hover:text-cyan-400 transition-colors uppercase">
+
+      {/* CENTER NAV */}
+      <div className="hidden md:flex gap-8 text-sm font-bold text-gray-400 uppercase">
+        <button onClick={() => navigate('/')} className="hover:text-cyan-400">
           Home
         </button>
-        <button onClick={() => handleScroll('modes')} className="hover:text-cyan-400 transition-colors uppercase">
+        <button onClick={() => handleScroll('modes')} className="hover:text-cyan-400">
           Game Modes
         </button>
-        <button onClick={() => handleScroll('how')} className="hover:text-cyan-400 transition-colors uppercase">
+        <button onClick={() => handleScroll('how')} className="hover:text-cyan-400">
           How It Works
         </button>
-        <button onClick={() => handleScroll('features')} className="hover:text-cyan-400 transition-colors uppercase">
+        <button onClick={() => handleScroll('features')} className="hover:text-cyan-400">
           Features
         </button>
       </div>
 
-      {/* RIGHT SECTION: AUTH & ACTIONS */}
+      {/* RIGHT SECTION */}
       <div className="flex items-center gap-6">
-        
-        {user ? (
-          <div className="flex items-center gap-4 animate-fade-in">
-            {/* PROFILE PILL */}
-            <Link to="/profile" className="flex items-center gap-3 bg-white/5 hover:bg-white/10 pl-1.5 pr-4 py-1.5 rounded-full transition-all border border-white/5 group">
-               <div className="w-8 h-8 rounded-full overflow-hidden border border-cyan-500/30">
-                 <img 
-                   src={getAvatarUrl(user.avatarId)} 
-                   alt="User" 
-                   className="w-full h-full object-cover bg-[#020617]"
-                 />
-               </div>
-               <span className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">
-                 {user.username}
-               </span>
-            </Link>
 
-            {/* LOGOUT BUTTON */}
-            <button 
+        {/* 🔐 AUTHENTICATED */}
+        {user ? (
+          <div className="flex items-center gap-4">
+
+            {/* Welcome Text */}
+            <span className="hidden sm:block text-sm font-bold text-gray-300">
+              Welcome <span className="text-cyan-400">{user.username}</span> !!
+            </span>
+
+            {/* Profile Icon */}
+            <div
+              onClick={() => navigate('/profile')}
+              className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center cursor-pointer border border-white/10 hover:border-cyan-400 transition-all"
+              title="Go to Profile"
+            >
+              <UserIcon className="text-cyan-400" size={20} />
+            </div>
+
+            {/* Logout */}
+            <button
               onClick={handleLogout}
-              className="text-gray-400 hover:text-red-400 transition-colors p-2"
-              title="Sign Out"
+              className="text-gray-400 hover:text-red-400 transition-colors"
+              title="Logout"
             >
               <LogOut size={20} />
             </button>
 
-            {/* DUEL BUTTON */}
-            <Link to="/rapid-duel">
-              <button className="hidden sm:block bg-cyan-400 hover:bg-cyan-300 text-[#020617] px-6 py-2 rounded font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)] transition-all transform hover:scale-105">
-                Duel Now
-              </button>
-            </Link>
           </div>
         ) : (
+          /* 🚪 NOT AUTHENTICATED */
           <div className="flex items-center gap-6">
             <Link to="/login">
-              <button className="text-sm font-bold text-gray-300 hover:text-white transition-colors uppercase tracking-widest">
+              <button className="text-sm font-bold text-gray-300 hover:text-white uppercase">
                 Sign In
               </button>
             </Link>
-            
+
             <Link to="/login">
-              <button className="bg-cyan-400 hover:bg-cyan-300 text-[#020617] px-8 py-2.5 rounded font-black text-sm uppercase tracking-wider shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)] transition-all transform hover:scale-105">
+              <button className="bg-cyan-400 hover:bg-cyan-300 text-[#020617] px-8 py-2.5 rounded font-black text-sm uppercase shadow transition-all">
                 Play Now
               </button>
             </Link>
