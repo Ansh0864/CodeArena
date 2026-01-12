@@ -160,6 +160,9 @@ app.get('/isAuthenticated', (req, res) => {
     }
 })
 
+app.use('/bug-hunter',bugHunterQuestions)
+app.use('/rapid-duel',rapidDuelQuestions)
+
 
 // SOCKET IO Routes
 io.on('connection', (socket) => {
