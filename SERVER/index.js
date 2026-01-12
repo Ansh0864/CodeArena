@@ -10,6 +10,7 @@ const mongoose = require('mongoose');
 const customError = require('./utils/customError');
 const ValidateUser = require('./utils/userValidate');
 const wrapAsync = require('./utils/wrapAsync');
+const { bugHunterQuestions, rapidDuelQuestions } = require('./utils/game.controller');
 const app = express();
 const PORT = 3000;
 const { Server } = require('socket.io')
@@ -181,7 +182,6 @@ app.use((err, req, res, next) => {
     console.error(err.stack); // inside error middleware
     res.status(status).send(message)
 })
-
 
 server.listen(PORT)
 
