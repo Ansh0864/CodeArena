@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
     matchesDrawn: { type: Number, default: 0 },
     matchHistory: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Match',
+        ref: 'match',
     }],
     lastActive: { type: Date, default: Date.now },
     isOnline: { type: Boolean, default: false },
@@ -21,5 +21,5 @@ const userSchema = new mongoose.Schema({
     country: { type: String },
 });
 userSchema.plugin(passportLocalMongoose, { usernameField: 'email' });
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model('user', userSchema);
 module.exports = User;

@@ -15,6 +15,12 @@ const app = express();
 const PORT = 3000;
 const { Server } = require('socket.io')
 const http = require('http')
+const matchValidation = require('./utils/matchValidate')
+
+const multer = require('multer')
+const { cloudinary, storage } = require('./cloudConfig')
+const upload = multer({ storage })
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -95,14 +101,20 @@ app.get('/session-check', (req, res) => {
         return res.status(401).send({ status: 'unauthenticated' });
     }
 });
-
+// User Validation Object
 const userValidation = (req, res, next) => {
     const response = ValidateUser.validate(req.body)
     if (response.error) {
         throw new customError(400, response.error.details[0].message)
     } else next()
 }
-
+// Match Validation Object
+const matchValidate = (req,res,next)=>{
+    const response = matchValidation(req.body)
+    if(response.error){
+        throw new customError(400,response.error.details[0].message)
+    }else next()
+}
 app.post('/signup', userValidation, wrapAsync(async (req, res, next) => {
     try {
 
