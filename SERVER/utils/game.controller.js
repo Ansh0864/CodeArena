@@ -63,6 +63,15 @@ async function generateBugHunter(count = 5) {
   return parsed;
 }
 
+async function generateAlgorithmAnalysis(count = 5) {
+  const raw = await generateFromGroq(algorithmAnalysisPrompt(count));
+  const parsed = extractJSONArray(raw);
+
+  if (!Array.isArray(parsed)) throw new Error("AlgorithmAnalysis: JSON is not an array");
+  return parsed;
+}
+
+
 /* -----------------------
    ✅ Express handlers (for routes)
 ------------------------ */
@@ -86,8 +95,30 @@ exports.rapidDuelQuestions = async (req, res) => {
   }
 };
 
+exports.algorithmAnalysisQuestions = async (req, res) => {
+  try {
+    const questions = await generateAlgorithmAnalysis(5);
+
+    res.json({
+      success: true,
+      mode: "Algorithm Analysis",
+      count: questions.length,
+      questions,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      error: "Algorithm Analysis generation failed",
+    });
+  }
+};
+
+
 /* -----------------------
    ✅ Export plain functions for sockets
 ------------------------ */
 exports.generateRapidDuel = generateRapidDuel;
 exports.generateBugHunter = generateBugHunter;
+exports.generateAlgorithmAnalysis = generateAlgorithmAnalysis;
+

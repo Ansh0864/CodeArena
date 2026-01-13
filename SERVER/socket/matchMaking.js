@@ -1,5 +1,5 @@
 const Match = require("../models/Match");
-const { generateRapidDuel, generateBugHunter } = require("../utils/game.controller");
+const { generateRapidDuel, generateBugHunter,generateAlgorithmAnalysis } = require("../utils/game.controller");
 
 const queues = {
   rapidDuel: [],
@@ -19,6 +19,7 @@ function createRoomId(mode) {
 async function getQuestions(mode) {
   if (mode === "rapidDuel") return await generateRapidDuel();
   if (mode === "bughunter") return await generateBugHunter();
+  if (mode === "algorithmAnalysis") return generateAlgorithmAnalysis(5);
   return [];
 }
 

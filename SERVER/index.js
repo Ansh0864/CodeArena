@@ -10,7 +10,7 @@ const mongoose = require("mongoose");
 const customError = require("./utils/customError");
 const ValidateUser = require("./utils/userValidate");
 const wrapAsync = require("./utils/wrapAsync");
-const { bugHunterQuestions, rapidDuelQuestions } = require("./utils/game.controller");
+const { bugHunterQuestions, rapidDuelQuestions, algorithmAnalysisQuestions } = require("./utils/game.controller");
 
 const http = require("http");
 const { Server } = require("socket.io");
@@ -200,7 +200,7 @@ app.get("/isAuthenticated", (req, res) => {
 
 app.use("/bug-hunter", bugHunterQuestions);
 app.use("/rapid-duel", rapidDuelQuestions);
-
+app.use("/algorithm-analysis", algorithmAnalysisQuestions);
 app.get("/", (req, res) => {
   res.json({ status: "ok", message: "CodeArena server running" });
 });
