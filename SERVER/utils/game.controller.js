@@ -1,64 +1,93 @@
-const {generateFromGroq}= require('./gemini.services')
+const { generateFromGroq } = require("./gemini.services");
+const { bugHunterPrompt, rapidDuelPrompt } = require("./promptTemplates");
 
-const {bugHunterPrompt, rapidDuelPrompt}= require('./promptTemplates')
+function extractJSONArray(text) {
+  const cleaned = (text || "")
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
 
-function extractJSON(text) {
-  try {
-    const cleaned = text
-      .replace(/```json|```/g, "")
-      .trim();
+  // Find first JSON array by bracket counting
+  const start = cleaned.indexOf("[");
+  if (start === -1) throw new Error("No JSON array start '[' found");
 
+  let depth = 0;
+  let end = -1;
 
-    try {
-      return JSON.parse(cleaned);
-    } catch {}
-
-
-    const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
-    if (arrayMatch) {
-      return JSON.parse(arrayMatch[0]);
+  for (let i = start; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (ch === "[") depth++;
+    if (ch === "]") {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
     }
-
-    
-    const objectMatch = cleaned.match(/\{[\s\S]*\}/);
-    if (objectMatch) {
-      return JSON.parse(objectMatch[0]);
-    }
-
-    throw new Error("No valid JSON found");
-  } catch (err) {
-    console.error(" JSON PARSE FAILED");
-    console.error(text);
-    throw err;
   }
+
+  if (end === -1) throw new Error("No complete JSON array found");
+
+  const candidate = cleaned.slice(start, end + 1);
+
+  const parsed = JSON.parse(candidate);
+
+  // Minimal validation (helps catch garbage early)
+  if (!Array.isArray(parsed)) throw new Error("Parsed JSON is not an array");
+
+  for (const q of parsed) {
+    if (!q || typeof q !== "object") throw new Error("Invalid question object");
+    if (!Array.isArray(q.options)) throw new Error("Invalid 'options' - must be array");
+    if (q.options.length !== 4) throw new Error("Each question must have exactly 4 options");
+    if (typeof q.correctOptionIndex !== "number") throw new Error("Missing correctOptionIndex");
+  }
+
+  return parsed;
 }
 
 
-
-exports.bugHunterQuestions= async(req,res)=>{
-    try{
-        const raw= await generateFromGroq(bugHunterPrompt())
-        const question= extractJSON(raw);
-        res.json({
-            mode: "Bug Hunter",
-            question
-        })
-    }catch(err){
-        console.log(err)
-        res.status(500).json({ error: "Failed to generate Bug Hunter question" });
-    }
+/* -----------------------
+   ✅ Plain functions (for socket)
+------------------------ */
+async function generateRapidDuel(count = 5) {
+  const raw = await generateFromGroq(rapidDuelPrompt(count));
+  const parsed = extractJSONArray(raw);
+  if (!Array.isArray(parsed)) throw new Error("RapidDuel: JSON is not an array");
+  return parsed;
 }
 
-exports.rapidDuelQuestions= async(req,res)=>{
-    try{
-        const raw= await generateFromGroq(rapidDuelPrompt())
-        const question= extractJSON(raw);
-        res.json({
-            mode: "Rapid Duel",
-            question
-        })
-    }catch(err){
-        console.log(err)
-        res.status(500).json({ error: "Failed to generate Rapid Duel question" });
-    }
+async function generateBugHunter(count = 5) {
+  const raw = await generateFromGroq(bugHunterPrompt(count));
+  const parsed = extractJSONArray(raw);
+  if (!Array.isArray(parsed)) throw new Error("BugHunter: JSON is not an array");
+  return parsed;
 }
+
+/* -----------------------
+   ✅ Express handlers (for routes)
+------------------------ */
+exports.bugHunterQuestions = async (req, res) => {
+  try {
+    const questions = await generateBugHunter(5);
+    res.json({ mode: "Bug Hunter", question: questions });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Failed to generate Bug Hunter question" });
+  }
+};
+
+exports.rapidDuelQuestions = async (req, res) => {
+  try {
+    const questions = await generateRapidDuel(5);
+    res.json({ mode: "Rapid Duel", question: questions });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Failed to generate Rapid Duel question" });
+  }
+};
+
+/* -----------------------
+   ✅ Export plain functions for sockets
+------------------------ */
+exports.generateRapidDuel = generateRapidDuel;
+exports.generateBugHunter = generateBugHunter;
