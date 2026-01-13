@@ -1,105 +1,124 @@
-const {generateFromGroq}= require('./gemini.services')
+const { generateFromGroq } = require("./gemini.services");
+const { bugHunterPrompt, rapidDuelPrompt } = require("./promptTemplates");
 
-const {bugHunterPrompt, rapidDuelPrompt , algorithmAnalysisPrompt}= require('./promptTemplates')
-function normalizeValue(value) {
-  if (typeof value === "string") {
-    return value
-      .replace(/\\n/g, "\n")     // escaped newlines
-      .replace(/\n+/g, "\n")     // multiple newlines
-      .replace(/\s+/g, " ")      // extra spaces
-      .trim();
-  }
+function extractJSONArray(text) {
+  const cleaned = (text || "")
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
 
-  if (Array.isArray(value)) {
-    return value.map(normalizeValue);
-  }
+  // Find first JSON array by bracket counting
+  const start = cleaned.indexOf("[");
+  if (start === -1) throw new Error("No JSON array start '[' found");
 
-  if (typeof value === "object" && value !== null) {
-    const cleanedObj = {};
-    for (const key in value) {
-      cleanedObj[key] = normalizeValue(value[key]);
+  let depth = 0;
+  let end = -1;
+
+  for (let i = start; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (ch === "[") depth++;
+    if (ch === "]") {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
     }
-    return cleanedObj;
   }
 
-  return value;
-}
-function extractJSON(text) {
-  try {
-    const cleaned = text
-      .replace(/```json|```/gi, "")
-      .trim();
+  if (end === -1) throw new Error("No complete JSON array found");
 
-    let parsed;
+  const candidate = cleaned.slice(start, end + 1);
 
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch {
-      const match = cleaned.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
-      if (!match) throw new Error("No JSON detected");
-      parsed = JSON.parse(match[0]);
-    }
+  const parsed = JSON.parse(candidate);
 
-    return normalizeValue(parsed);
-  } catch (err) {
-    console.error("❌ JSON PARSE FAILED");
-    console.error(text);
-    throw err;
+  // Minimal validation (helps catch garbage early)
+  if (!Array.isArray(parsed)) throw new Error("Parsed JSON is not an array");
+
+  for (const q of parsed) {
+    if (!q || typeof q !== "object") throw new Error("Invalid question object");
+    if (!Array.isArray(q.options)) throw new Error("Invalid 'options' - must be array");
+    if (q.options.length !== 4) throw new Error("Each question must have exactly 4 options");
+    if (typeof q.correctOptionIndex !== "number") throw new Error("Missing correctOptionIndex");
   }
+
+  return parsed;
 }
 
 
+/* -----------------------
+   ✅ Plain functions (for socket)
+------------------------ */
+async function generateRapidDuel(count = 5) {
+  const raw = await generateFromGroq(rapidDuelPrompt(count));
+  const parsed = extractJSONArray(raw);
+  if (!Array.isArray(parsed)) throw new Error("RapidDuel: JSON is not an array");
+  return parsed;
+}
 
+async function generateBugHunter(count = 5) {
+  const raw = await generateFromGroq(bugHunterPrompt(count));
+  const parsed = extractJSONArray(raw);
+  if (!Array.isArray(parsed)) throw new Error("BugHunter: JSON is not an array");
+  return parsed;
+}
+
+async function generateAlgorithmAnalysis(count = 5) {
+  const raw = await generateFromGroq(algorithmAnalysisPrompt(count));
+  const parsed = extractJSONArray(raw);
+
+  if (!Array.isArray(parsed)) throw new Error("AlgorithmAnalysis: JSON is not an array");
+  return parsed;
+}
+
+
+/* -----------------------
+   ✅ Express handlers (for routes)
+------------------------ */
 exports.bugHunterQuestions = async (req, res) => {
   try {
-    const raw = await generateFromGroq(bugHunterPrompt());
-    const questions = extractJSON(raw);
-
-    res.json({
-      success: true,
-      mode: "Bug Hunter",
-      count: questions.length,
-      questions
-    });
+    const questions = await generateBugHunter(5);
+    res.json({ mode: "Bug Hunter", question: questions });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: "Bug Hunter generation failed" });
+    console.log(err);
+    res.status(500).json({ error: "Failed to generate Bug Hunter question" });
   }
 };
 
 exports.rapidDuelQuestions = async (req, res) => {
   try {
-    const raw = await generateFromGroq(rapidDuelPrompt());
-    const questions = extractJSON(raw);
-
-    res.json({
-      success: true,
-      mode: "Rapid Duel",
-      count: questions.length,
-      questions
-    });
+    const questions = await generateRapidDuel(5);
+    res.json({ mode: "Rapid Duel", question: questions });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: "Rapid Duel generation failed" });
+    console.log(err);
+    res.status(500).json({ error: "Failed to generate Rapid Duel question" });
   }
 };
 
 exports.algorithmAnalysisQuestions = async (req, res) => {
   try {
-    const raw = await generateFromGroq(algorithmAnalysisPrompt());
-    const questions = extractJSON(raw);
+    const questions = await generateAlgorithmAnalysis(5);
 
     res.json({
       success: true,
       mode: "Algorithm Analysis",
       count: questions.length,
-      questions
+      questions,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      error: "Algorithm Analysis generation failed"
+      error: "Algorithm Analysis generation failed",
     });
   }
 };
+
+
+/* -----------------------
+   ✅ Export plain functions for sockets
+------------------------ */
+exports.generateRapidDuel = generateRapidDuel;
+exports.generateBugHunter = generateBugHunter;
+exports.generateAlgorithmAnalysis = generateAlgorithmAnalysis;
+
