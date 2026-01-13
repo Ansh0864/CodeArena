@@ -10,7 +10,7 @@ const mongoose = require('mongoose');
 const customError = require('./utils/customError');
 const ValidateUser = require('./utils/userValidate');
 const wrapAsync = require('./utils/wrapAsync');
-const { bugHunterQuestions, rapidDuelQuestions } = require('./utils/game.controller');
+const { bugHunterQuestions, rapidDuelQuestions , algorithmAnalysisQuestions } = require('./utils/game.controller');
 const app = express();
 const PORT = 3000;
 const { Server } = require('socket.io')
@@ -174,6 +174,7 @@ app.get('/isAuthenticated', (req, res) => {
 
 app.use('/bug-hunter',bugHunterQuestions)
 app.use('/rapid-duel',rapidDuelQuestions)
+app.use('/algorithmAnalysis',algorithmAnalysisQuestions)
 
 
 // SOCKET IO Routes

@@ -72,3 +72,72 @@ JSON FORMAT:
 ]
 `;
 
+exports.algorithmAnalysisPrompt = (count = 5) => `
+Generate ${count} DIFFERENT Algorithm Analysis multiple-choice questions.
+
+GAME CONTEXT:
+- Player is given a coding problem statement
+- A MIN and MAX allowed time complexity is provided
+- Options describe DIFFERENT approaches (not raw code)
+- Player must choose the MOST OPTIMAL approach
+- Optimal means:
+  1. Time complexity within allowed range
+  2. Lowest possible time complexity
+  3. Reasonable space complexity
+
+STRICT RULES:
+- Medium difficulty only
+- Language independent
+- No full code implementations
+- Approaches must be clearly explained in plain text
+- EXACTLY 4 options per question
+- EXACTLY ONE correct option
+- Wrong options must be realistic but suboptimal
+- Each option must mention time AND space complexity
+- No markdown
+- No backticks
+- No explanations outside options
+- No hints
+- All questions must be UNIQUE
+
+Respond ONLY in VALID JSON as an ARRAY.
+DO NOT include any extra text.
+
+JSON FORMAT:
+[
+  {
+    "id": "unique_algo_id",
+    "title": "short problem title",
+    "problemStatement": "clear problem description",
+    "constraints": {
+      "minTimeComplexity": "e.g. O(n)",
+      "maxTimeComplexity": "e.g. O(n log n)"
+    },
+    "options": [
+      {
+        "approach": "brief explanation of approach",
+        "timeComplexity": "O(...) ",
+        "spaceComplexity": "O(...)"
+      },
+      {
+        "approach": "brief explanation of approach",
+        "timeComplexity": "O(...) ",
+        "spaceComplexity": "O(...)"
+      },
+      {
+        "approach": "brief explanation of approach",
+        "timeComplexity": "O(...) ",
+        "spaceComplexity": "O(...)"
+      },
+      {
+        "approach": "brief explanation of approach",
+        "timeComplexity": "O(...) ",
+        "spaceComplexity": "O(...)"
+      }
+    ],
+    "correctOptionIndex": 0,
+    "difficulty": "medium",
+    "category": "arrays | strings | graphs | recursion | searching | sorting | dp"
+  }
+]
+`;

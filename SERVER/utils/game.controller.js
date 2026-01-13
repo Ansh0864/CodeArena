@@ -1,33 +1,48 @@
 const {generateFromGroq}= require('./gemini.services')
 
-const {bugHunterPrompt, rapidDuelPrompt}= require('./promptTemplates')
+const {bugHunterPrompt, rapidDuelPrompt , algorithmAnalysisPrompt}= require('./promptTemplates')
+function normalizeValue(value) {
+  if (typeof value === "string") {
+    return value
+      .replace(/\\n/g, "\n")     // escaped newlines
+      .replace(/\n+/g, "\n")     // multiple newlines
+      .replace(/\s+/g, " ")      // extra spaces
+      .trim();
+  }
 
+  if (Array.isArray(value)) {
+    return value.map(normalizeValue);
+  }
+
+  if (typeof value === "object" && value !== null) {
+    const cleanedObj = {};
+    for (const key in value) {
+      cleanedObj[key] = normalizeValue(value[key]);
+    }
+    return cleanedObj;
+  }
+
+  return value;
+}
 function extractJSON(text) {
   try {
     const cleaned = text
-      .replace(/```json|```/g, "")
+      .replace(/```json|```/gi, "")
       .trim();
 
+    let parsed;
 
     try {
-      return JSON.parse(cleaned);
-    } catch {}
-
-
-    const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
-    if (arrayMatch) {
-      return JSON.parse(arrayMatch[0]);
+      parsed = JSON.parse(cleaned);
+    } catch {
+      const match = cleaned.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
+      if (!match) throw new Error("No JSON detected");
+      parsed = JSON.parse(match[0]);
     }
 
-    
-    const objectMatch = cleaned.match(/\{[\s\S]*\}/);
-    if (objectMatch) {
-      return JSON.parse(objectMatch[0]);
-    }
-
-    throw new Error("No valid JSON found");
+    return normalizeValue(parsed);
   } catch (err) {
-    console.error(" JSON PARSE FAILED");
+    console.error("❌ JSON PARSE FAILED");
     console.error(text);
     throw err;
   }
@@ -35,30 +50,56 @@ function extractJSON(text) {
 
 
 
-exports.bugHunterQuestions= async(req,res)=>{
-    try{
-        const raw= await generateFromGroq(bugHunterPrompt())
-        const question= extractJSON(raw);
-        res.json({
-            mode: "Bug Hunter",
-            question
-        })
-    }catch(err){
-        console.log(err)
-        res.status(500).json({ error: "Failed to generate Bug Hunter question" });
-    }
-}
+exports.bugHunterQuestions = async (req, res) => {
+  try {
+    const raw = await generateFromGroq(bugHunterPrompt());
+    const questions = extractJSON(raw);
 
-exports.rapidDuelQuestions= async(req,res)=>{
-    try{
-        const raw= await generateFromGroq(rapidDuelPrompt())
-        const question= extractJSON(raw);
-        res.json({
-            mode: "Rapid Duel",
-            question
-        })
-    }catch(err){
-        console.log(err)
-        res.status(500).json({ error: "Failed to generate Rapid Duel question" });
-    }
-}
+    res.json({
+      success: true,
+      mode: "Bug Hunter",
+      count: questions.length,
+      questions
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: "Bug Hunter generation failed" });
+  }
+};
+
+exports.rapidDuelQuestions = async (req, res) => {
+  try {
+    const raw = await generateFromGroq(rapidDuelPrompt());
+    const questions = extractJSON(raw);
+
+    res.json({
+      success: true,
+      mode: "Rapid Duel",
+      count: questions.length,
+      questions
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: "Rapid Duel generation failed" });
+  }
+};
+
+exports.algorithmAnalysisQuestions = async (req, res) => {
+  try {
+    const raw = await generateFromGroq(algorithmAnalysisPrompt());
+    const questions = extractJSON(raw);
+
+    res.json({
+      success: true,
+      mode: "Algorithm Analysis",
+      count: questions.length,
+      questions
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      error: "Algorithm Analysis generation failed"
+    });
+  }
+};
