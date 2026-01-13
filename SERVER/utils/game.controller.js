@@ -1,5 +1,5 @@
 const { generateFromGroq } = require("./gemini.services");
-const { bugHunterPrompt, rapidDuelPrompt } = require("./promptTemplates");
+const { bugHunterPrompt, rapidDuelPrompt,algorithmAnalysisPrompt } = require("./promptTemplates");
 
 function extractJSONArray(text) {
   const cleaned = (text || "")
@@ -100,10 +100,8 @@ exports.algorithmAnalysisQuestions = async (req, res) => {
     const questions = await generateAlgorithmAnalysis(5);
 
     res.json({
-      success: true,
-      mode: "Algorithm Analysis",
-      count: questions.length,
-      questions,
+       mode: "Algorithm Analysis",
+      question:questions,
     });
   } catch (err) {
     console.error(err);
