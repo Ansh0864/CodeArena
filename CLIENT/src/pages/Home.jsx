@@ -5,7 +5,7 @@ import BattleModes from '../components/BattleModes';
 import HowItWorks from '../components/HowItWorks';
 import Features from '../components/Features';
 import CTA from '../components/CTA';
-
+import Footer from '../components/Footer';
 const Home = () => {
   return (
     <main>
@@ -14,6 +14,7 @@ const Home = () => {
       <HowItWorks />
       <Features />
       <CTA />
+      <Footer></Footer>
     </main>
   );
 };

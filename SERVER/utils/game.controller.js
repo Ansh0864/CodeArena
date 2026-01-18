@@ -1,5 +1,70 @@
 const { generateFromGroq } = require("./gemini.services");
-const { bugHunterPrompt, rapidDuelPrompt } = require("./promptTemplates");
+const { bugHunterPrompt, rapidDuelPrompt ,algorithmAnalysisPrompt,codeDuelPrompt ,auditorPrompt} = require("./promptTemplates");
+
+// Helper to extract a single Object (used for Code Duel)
+function extractJSONObject(text) {
+  const cleaned = (text || "")
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
+  const start = cleaned.indexOf("{");
+  if (start === -1) throw new Error("No JSON object start '{' found");
+
+  let depth = 0;
+  let end = -1;
+
+  for (let i = start; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (ch === "{") depth++;
+    if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+
+  if (end === -1) throw new Error("No complete JSON object found");
+  const candidate = cleaned.slice(start, end + 1);
+  const parsed = JSON.parse(candidate);
+
+  // Validation for Code Duel structure
+  if (!parsed.problemStatement || !Array.isArray(parsed.testCases)) {
+    throw new Error("Invalid Code Duel object structure");
+  }
+
+  return parsed;
+}
+
+// Generic extractor that doesn't enforce "Code Duel" fields
+function extractRawJSON(text) {
+  const cleaned = (text || "")
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
+  const start = cleaned.indexOf("{");
+  if (start === -1) throw new Error("No JSON object start '{' found");
+
+  let depth = 0;
+  let end = -1;
+  for (let i = start; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (ch === "{") depth++;
+    if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+
+  if (end === -1) throw new Error("No complete JSON object found");
+  return JSON.parse(cleaned.slice(start, end + 1));
+}
 
 function extractJSONArray(text) {
   const cleaned = (text || "")
@@ -70,6 +135,43 @@ async function generateAlgorithmAnalysis(count = 5) {
   if (!Array.isArray(parsed)) throw new Error("AlgorithmAnalysis: JSON is not an array");
   return parsed;
 }
+async function generateCodeDuel(difficulty = "easy") {
+    try {
+        // PASS 1: Generate the Problem Structure (The Creator)
+        const creatorRaw = await generateFromGroq(codeDuelPrompt(difficulty));
+        const problem = extractJSONObject(creatorRaw);
+
+        if (!problem || !problem.testCases) {
+            throw new Error("Creator failed to generate a valid structure.");
+        }
+        // PASS 2: Verify the Outputs (The Auditor)
+        // We send the problem statement and the UNVERIFIED inputs to the auditor
+        const auditorRaw = await generateFromGroq(
+            auditorPrompt(
+                problem.problemStatement, 
+                problem.examples, 
+                problem.testCases
+            )
+        );
+        const verifiedData = extractRawJSON(auditorRaw);
+        console.log(verifiedData)
+        if (verifiedData && verifiedData.testCases) {
+            // MERGE: Replace the hallucinated outputs with verified ones
+            problem.examples = verifiedData.examples;
+            problem.testCases = verifiedData.testCases;
+            console.log("✅ Problem verified and outputs corrected.");
+        } else {
+            console.warn("⚠️ Auditor failed. Falling back to creator outputs (High risk of error).");
+        }
+
+        return problem;
+
+    } catch (error) {
+        console.error("Double-Pass Generation Error:", error);
+        return null;
+    }
+}
+
 
 
 /* -----------------------
@@ -114,6 +216,24 @@ exports.algorithmAnalysisQuestions = async (req, res) => {
   }
 };
 
+exports.codeDuelQuestions = async (req, res) => {
+  try {
+    const { difficulty } = req.query; // Optional: allow passing ?difficulty=hard
+    const problem = await generateCodeDuel(difficulty || "medium");
+    
+    res.json({ 
+      success: true,
+      mode: "Code Duel", 
+      problem: problem 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to generate Code Duel problem" 
+    });
+  }
+};
 
 /* -----------------------
    ✅ Export plain functions for sockets
@@ -121,4 +241,5 @@ exports.algorithmAnalysisQuestions = async (req, res) => {
 exports.generateRapidDuel = generateRapidDuel;
 exports.generateBugHunter = generateBugHunter;
 exports.generateAlgorithmAnalysis = generateAlgorithmAnalysis;
+exports.generateCodeDuel = generateCodeDuel;
 

@@ -138,8 +138,6 @@ function App() {
             />
           </Routes>
         </div>
-
-        <Footer />
         <ToastContainer position="bottom-right" autoClose={3000} theme="dark" />
       </div>
     </Router>

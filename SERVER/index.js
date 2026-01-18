@@ -10,8 +10,8 @@ const mongoose = require("mongoose");
 const customError = require("./utils/customError");
 const ValidateUser = require("./utils/userValidate");
 const wrapAsync = require("./utils/wrapAsync");
-const { bugHunterQuestions, rapidDuelQuestions, algorithmAnalysisQuestions } = require("./utils/game.controller");
-
+const { bugHunterQuestions, rapidDuelQuestions, algorithmAnalysisQuestions , codeDuelQuestions } = require("./utils/game.controller");
+const MongoStore = require('connect-mongo').default;
 const http = require("http");
 const { Server } = require("socket.io");
 
@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ================== MongoDB ==================
 async function main() {
-  await mongoose.connect(process.env.MONGO_URI);
+  await mongoose.connect(process.env.ATLAS_URL);
   console.log("Connected to mongodb!");
   console.log("Using DB:", mongoose.connection.name);
 }
@@ -50,6 +50,21 @@ app.use(
   })
 );
 
+//=================== Connect Mongo and Session storage on cloud ===============
+
+// Use `new MongoStore` instead of `.create`
+const store = MongoStore.create({
+  mongoUrl: process.env.ATLAS_URL,
+  crypto: {
+    secret: process.env.SECRET,
+  },
+  touchAfter: 24 * 3600, // time period in seconds
+});
+     //error handling in mongosession store
+store.on('error',()=>{
+    console.log(`ERROR IN MONGO SESSION STORE`)
+})
+
 // ================== Sessions ==================
 app.use(cookieParser(process.env.SECRET));
 app.set("trust proxy", 1);
@@ -58,6 +73,7 @@ const sessionMiddleware = session({
   secret: process.env.SECRET,
   resave: false,
   saveUninitialized: false,
+  store,
   cookie: {
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
@@ -92,7 +108,9 @@ passport.deserializeUser((userId, done) => {
 
 passport.use(new LocalStrategy({ usernameField: "email" }, User.authenticate()));
 
-// ================== HTTP server + Socket.IO ==================
+
+
+// ================== HTTP server + Socket.IO ==================================
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -197,10 +215,51 @@ app.get("/isAuthenticated", (req, res) => {
   if (req.isAuthenticated()) return res.send({ user: req.user });
   return res.status(401).send({ status: "unauthenticated" });
 });
+/**
+ * GET /getLeaderboard
+ * Fetches users sorted by rating in descending order
+ * Populates match history for detailed view
+ */
+
+app.get("/getLeaderboard", wrapAsync(async (req, res) => {
+    try {
+        // 1. Query the User model
+        // 2. Sort by 'rating' field in descending order (-1)
+        // 3. Populate 'matchHistory' to get the full match objects
+        const leaderboard = await User.find({})
+            .sort({ rating: -1 })
+            .populate("matchHistory")
+            .exec();
+
+        // Check if leaderboard exists
+        if (!leaderboard) {
+            return res.status(404).json({
+                success: false,
+                message: "No users found to generate leaderboard."
+            });
+        }
+
+        // Return the sorted array of objects
+        res.status(200).json({
+            success: true,
+            count: leaderboard.length,
+            data: leaderboard
+        });
+
+    } catch (error) {
+        // Handle database or population errors
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch leaderboard data",
+            error: error.message
+        });
+    }
+}));
 
 app.use("/bug-hunter", bugHunterQuestions);
 app.use("/rapid-duel", rapidDuelQuestions);
 app.use("/algorithm-analysis", algorithmAnalysisQuestions);
+app.use('/code-duel',codeDuelQuestions)
 app.get("/", (req, res) => {
   res.json({ status: "ok", message: "CodeArena server running" });
 });

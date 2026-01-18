@@ -13,7 +13,9 @@ async function generateFromGroq(prompt) {
         content: prompt,
       },
     ],
-    temperature: 0.4,
+    temperature: 0.5,
+    max_tokens: 5500, // <--- INCREASE THIS to at least 4096
+    response_format: { type: "json_object" }
   });
 
   return chatCompletion.choices[0].message.content;
