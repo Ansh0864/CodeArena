@@ -11,30 +11,30 @@ const feats = [
 
 const Features = () => {
   return (
-    <section id="features" className="py-24 px-6 bg-[#020617]">
-      <div className="text-center mb-20">
-        <h2 className="text-4xl md:text-5xl font-black mb-4 text-white">
+    <section id="features" className="py-16 md:py-24 px-4 md:px-6 bg-[#020617]">
+      <div className="text-center mb-12 md:mb-20">
+        <h2 className="text-3xl md:text-5xl font-black mb-4 text-white">
           Why <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">CodeArena?</span>
         </h2>
-        <p className="text-gray-400 text-lg">This isn't your average coding platform. We're built for competition.</p>
+        <p className="text-gray-400 text-sm md:text-lg">This isn't your average coding platform. We're built for competition.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mb-24">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-7xl mx-auto mb-16 md:mb-24">
         {feats.map((f, i) => (
-          <div key={i} className="bg-[#0b1221] border border-white/5 p-8 rounded-2xl hover:bg-[#0f172a] transition-all">
-            <div className={`w-12 h-12 rounded-lg ${f.bg} flex items-center justify-center ${f.color} mb-6`}>
+          <div key={i} className="bg-[#0b1221] border border-white/5 p-6 md:p-8 rounded-2xl hover:bg-[#0f172a] transition-all hover:-translate-y-1">
+            <div className={`w-12 h-12 rounded-lg ${f.bg} flex items-center justify-center ${f.color} mb-4 md:mb-6`}>
               {f.icon}
             </div>
-            <h4 className="text-xl font-bold mb-3 text-white">{f.title}</h4>
+            <h4 className="text-lg md:text-xl font-bold mb-2 md:mb-3 text-white">{f.title}</h4>
             <p className="text-gray-400 text-sm leading-relaxed">{f.desc}</p>
           </div>
         ))}
       </div>
 
-      {/* Trusted By (Image 8) */}
+      {/* Trusted By (Adaptive Layout) */}
       <div className="max-w-4xl mx-auto">
-        <div className="bg-[#0f172a] border border-white/5 rounded-full py-4 px-10 flex flex-wrap justify-center items-center gap-8 opacity-50">
-           <span className="text-xs text-gray-500 uppercase font-bold tracking-widest">Trusted by developers at</span>
+        <div className="bg-[#0f172a] border border-white/5 rounded-2xl md:rounded-full py-6 md:py-4 px-6 md:px-10 flex flex-wrap justify-center items-center gap-x-8 gap-y-4 opacity-50">
+           <span className="text-xs text-gray-500 uppercase font-bold tracking-widest w-full md:w-auto text-center md:text-left">Trusted by developers at</span>
            <span className="text-gray-300 font-bold">Google</span>
            <span className="text-gray-300 font-bold">Meta</span>
            <span className="text-gray-300 font-bold">Amazon</span>

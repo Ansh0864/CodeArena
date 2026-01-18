@@ -3,16 +3,18 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 
 // Layout
 import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+// Footer import removed from here
 
 // Pages
 import Home from "./pages/Home";
 import RapidDuel from "./pages/RapidDuel";
 import BugHuntArena from "./pages/BugHuntArena";
 import ComplexityDuel from "./pages/ComplexityDuel";
+import AlgorithmDuel from './pages/AlgorithmDuel';
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import RapidDuelPlay from "./pages/RapidDuelPlay";
+import Leaderboard from "./pages/Leaderboard";
 
 // Socket + Utils
 import { io } from "socket.io-client";
@@ -91,12 +93,13 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login setUser={setUser} />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
 
             <Route
               path="/profile"
               element={
                 <ProtectedRoute user={user}>
-                  <Profile user={user} />
+                  <Profile user={user} setUser={setUser} />
                 </ProtectedRoute>
               }
             />
@@ -136,10 +139,20 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/algorithm-duel"
+              element={
+                <ProtectedRoute user={user}>
+                  <AlgorithmDuel user={user} setUser={setUser} />
+                </ProtectedRoute>
+              }
+            />
+            
           </Routes>
         </div>
 
-        <Footer />
+        {/* Global Footer removed */}
         <ToastContainer position="bottom-right" autoClose={3000} theme="dark" />
       </div>
     </Router>
