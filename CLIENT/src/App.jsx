@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 // Layout
 import Navbar from "./components/Navbar";
@@ -19,7 +24,9 @@ import { io } from "socket.io-client";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-
+import BugHuntPlay from "./pages/BugHuntPlay";
+import ComplexityDuelPlay from "./pages/ComplexityDuelPlay";
+import ComplexityDuelMain from "./pages/ComplexityDuelMain";
 axios.defaults.withCredentials = true;
 
 /* =======================
@@ -29,7 +36,7 @@ if (!window.socket) {
   window.socket = io(import.meta.env.VITE_BACKEND_URL, {
     withCredentials: true,
     autoConnect: false,
-    transports: ["polling","websocket"],
+    transports: ["polling", "websocket"],
   });
 }
 export const socket = window.socket;
@@ -50,7 +57,9 @@ function App() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/isAuthenticated`);
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/isAuthenticated`
+        );
         setUser(res.data.user);
       } catch {
         setUser(null);
@@ -127,12 +136,36 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/bug-hunt/play/:matchId"
+              element={
+                <ProtectedRoute user={user}>
+                  <BugHuntPlay user={user} setUser={setUser} />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/complexity-duel"
               element={
                 <ProtectedRoute user={user}>
                   <ComplexityDuel user={user} setUser={setUser} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/complexity-duel/play/:matchId"
+              element={
+                <ProtectedRoute user={user}>
+                  <ComplexityDuelPlay user={user} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/code-duel"
+              element={
+                <ProtectedRoute user={user}>
+                  <ComplexityDuelMain user={user} setUser={setUser}/>
                 </ProtectedRoute>
               }
             />

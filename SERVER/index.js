@@ -145,11 +145,7 @@ io.use(passportSocketIo);
 // ✅ Setup matchmaking handlers
 setUpMatchMaking(io);
 
-// Debug socket connect
-io.on("connection", (socket) => {
-  console.log("User Connected:", socket.id);
-  console.log("Connected user id:", socket.request?.user?._id || socket.request?.session?.passport?.user);
-});
+
 
 // ================== Routes ==================
 app.get("/session-check", (req, res) => {

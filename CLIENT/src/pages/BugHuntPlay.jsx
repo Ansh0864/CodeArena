@@ -3,9 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { socket } from "../App";
 import { toast } from "react-toastify";
 
-const PER_Q_TIME = 20;
+const PER_Q_TIME = 30;
 
-export default function RapidDuelPlay({ user }) {
+export default function BugHuntPlay({ user }) {
   const navigate = useNavigate();
   const { state } = useLocation();
 
@@ -20,9 +20,10 @@ export default function RapidDuelPlay({ user }) {
   const [idx, setIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState(PER_Q_TIME);
 
-  const [selected, setSelected] = useState(null);
-  const [locked, setLocked] = useState(false);
+  // ✅ number of bugs guess
+  const [bugGuess, setBugGuess] = useState(1);
 
+  const [locked, setLocked] = useState(false);
   const [myCorrect, setMyCorrect] = useState(0);
   const [opCorrect, setOpCorrect] = useState(0);
 
@@ -39,20 +40,20 @@ export default function RapidDuelPlay({ user }) {
     return players.find((p) => p !== myId) || null;
   }, [players, myId]);
 
-  // Guards
+  // Guard
   useEffect(() => {
     if (!roomId || !matchId || !total) {
       toast.error("Invalid match state. Returning...");
-      navigate("/rapid-duel");
+      navigate("/bug-hunt");
     }
   }, [roomId, matchId, total, navigate]);
 
   // Reset per question + timer
   useEffect(() => {
-    setSelected(null);
     setLocked(false);
     setTimeLeft(PER_Q_TIME);
     setWaiting(false);
+    setBugGuess(1);
 
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -71,10 +72,11 @@ export default function RapidDuelPlay({ user }) {
     if (timeLeft > 0) return;
 
     setLocked(true);
+
     socket.emit("match:answer", {
       roomId,
       questionIndex: idx,
-      selectedIndex: -1,
+      selectedIndex: -1, // time out
     });
 
     toast.error("Time up!");
@@ -100,7 +102,6 @@ export default function RapidDuelPlay({ user }) {
     const onOpponentLeft = (data) => {
       setOpponentLeft(true);
       toast.warn(data?.message || "Opponent left. Finish to win.");
-      // IMPORTANT: If you were waiting, stop waiting
       setWaiting(false);
     };
 
@@ -123,11 +124,9 @@ export default function RapidDuelPlay({ user }) {
     };
   }, [idx, opponentId]);
 
-  // Helpers
   const goNextAfterDelay = () => {
     setTimeout(() => {
       if (idx >= total - 1) {
-        // If opponent left, DO NOT wait forever — server will finalize once you finish
         if (!result) setWaiting(true);
         return;
       }
@@ -135,16 +134,21 @@ export default function RapidDuelPlay({ user }) {
     }, 800);
   };
 
-  const chooseOption = (optIndex) => {
+  const submitBugCount = () => {
     if (locked || result) return;
 
-    setSelected(optIndex);
+    const val = Number(bugGuess);
+    if (!Number.isFinite(val) || val < 0) {
+      toast.error("Enter a valid number");
+      return;
+    }
+
     setLocked(true);
 
     socket.emit("match:answer", {
       roomId,
       questionIndex: idx,
-      selectedIndex: optIndex,
+      selectedIndex: val, // ✅ send the number user entered
     });
 
     goNextAfterDelay();
@@ -158,20 +162,19 @@ export default function RapidDuelPlay({ user }) {
   }, [result, myId]);
 
   const leaveMatch = () => {
-    // Tell server you left so opponent gets notified
     socket.emit("match:leave", { roomId });
-    navigate("/rapid-duel");
+    navigate("/bug-hunt");
   };
 
   if (!current && !result) return null;
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 bg-[#020617] text-white">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="font-black text-xl">
-            Rapid Duel <span className="text-cyan-400">Match</span>
+            Bug Hunt <span className="text-pink-400">Arena</span>
           </div>
 
           <div className="flex items-center gap-4 text-sm font-bold">
@@ -226,58 +229,102 @@ export default function RapidDuelPlay({ user }) {
 
             <button
               onClick={() => navigate("/")}
-              className="mt-6 px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-400 to-emerald-400 text-[#020617] font-black hover:opacity-90 transition"
+              className="mt-6 px-8 py-3 rounded-xl bg-gradient-to-r from-pink-400 to-purple-400 text-[#020617] font-black hover:opacity-90 transition"
             >
               Back Home
             </button>
           </div>
         )}
 
-        {/* Question card */}
+        {/* Main 2-column Layout */}
         {!result && current && (
-          <div className="p-6 rounded-3xl bg-[#0f172a] border border-white/10 shadow-xl">
-            <div className="text-gray-400 text-xs font-bold mb-2">
-              CATEGORY: {current.category?.toUpperCase?.() || "GENERAL"} •{" "}
-              {current.difficulty?.toUpperCase?.() || "EASY"}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* LEFT: Code */}
+            <div className="p-6 rounded-3xl bg-[#0f172a] border border-white/10 shadow-xl">
+              <div className="text-gray-400 text-xs font-bold mb-2">
+                MODE: BUG COUNT • {current.difficulty?.toUpperCase?.() || "EASY"}
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-black mb-4">
+                {current.title || "Count the bugs"}
+              </h2>
+
+              <div className="text-gray-200 font-bold mb-4">
+                {current.question || "How many logical bugs are in this code?"}
+              </div>
+
+              <pre className="bg-black/40 border border-white/10 rounded-2xl p-4 overflow-auto text-sm text-pink-200">
+{current.code}
+              </pre>
+
+              {/* optional hints (you can remove this block if you don't want hints) */}
+              {Array.isArray(current.bugHints) && current.bugHints.length > 0 && (
+                <div className="mt-4 text-xs text-gray-400 font-bold">
+                  Hints:{" "}
+                  <span className="text-gray-500 font-medium">
+                    {current.bugHints.slice(0, 2).join(" • ")}
+                  </span>
+                </div>
+              )}
             </div>
 
-            <h2 className="text-xl md:text-2xl font-black mb-6">
-              {current.question}
-            </h2>
+            {/* RIGHT: Input + Counter */}
+            <div className="p-6 rounded-3xl bg-[#0f172a] border border-white/10 shadow-xl">
+              <div className="text-gray-400 text-xs font-bold mb-2">
+                YOUR ANSWER
+              </div>
 
-            <div className="space-y-3">
-              {current.options.map((opt, i) => {
-                const isSelected = selected === i;
-                return (
-                  <button
-                    key={i}
-                    disabled={locked || result}
-                    onClick={() => chooseOption(i)}
-                    className={`w-full text-left p-4 rounded-xl border transition-all font-bold
-                      ${
-                        isSelected
-                          ? "border-cyan-400 bg-cyan-400/10"
-                          : "border-white/10 bg-white/5 hover:bg-white/10"
-                      }
-                      ${locked ? "opacity-80 cursor-not-allowed" : ""}
-                    `}
-                  >
-                    {opt}
-                  </button>
-                );
-              })}
-            </div>
+              <div className="text-2xl font-black mb-4">
+                Total Bugs Found:{" "}
+                <span className="text-pink-400">{bugGuess}</span>
+              </div>
 
-            <div className="mt-6 flex items-center justify-between">
+              <div className="flex items-center gap-3 mb-6">
+                <button
+                  disabled={locked}
+                  onClick={() => setBugGuess((v) => Math.max(0, Number(v) - 1))}
+                  className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 font-black text-2xl hover:bg-white/10 transition disabled:opacity-50"
+                >
+                  –
+                </button>
+
+                <input
+                  value={bugGuess}
+                  disabled={locked}
+                  onChange={(e) => setBugGuess(e.target.value)}
+                  className="flex-1 h-14 rounded-2xl bg-black/30 border border-white/10 px-4 text-xl font-black text-white outline-none"
+                  type="number"
+                  min={0}
+                />
+
+                <button
+                  disabled={locked}
+                  onClick={() => setBugGuess((v) => Number(v) + 1)}
+                  className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 font-black text-2xl hover:bg-white/10 transition disabled:opacity-50"
+                >
+                  +
+                </button>
+              </div>
+
               <button
-                onClick={leaveMatch}
-                className="px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-black hover:bg-red-500 hover:text-white transition"
+                disabled={locked || result}
+                onClick={submitBugCount}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-400 to-purple-400 text-[#020617] font-black hover:opacity-90 transition disabled:opacity-60"
               >
-                Leave Match
+                Submit Bug Count
               </button>
 
-              <div className="text-gray-400 text-sm font-bold">
-                Pick fast — timer auto-submits!
+              <div className="mt-6 flex items-center justify-between">
+                <button
+                  onClick={leaveMatch}
+                  className="px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-black hover:bg-red-500 hover:text-white transition"
+                >
+                  Leave Match
+                </button>
+
+                <div className="text-gray-400 text-sm font-bold">
+                  Timer auto-submits.
+                </div>
               </div>
             </div>
           </div>
