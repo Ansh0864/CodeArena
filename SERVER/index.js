@@ -215,6 +215,34 @@ app.get("/isAuthenticated", (req, res) => {
   if (req.isAuthenticated()) return res.send({ user: req.user });
   return res.status(401).send({ status: "unauthenticated" });
 });
+
+
+app.put("/update-avatar", async (req, res) => {
+  // 1. Check if user is logged in
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const { avatarUrl } = req.body;
+    
+    // 2. Update the user in the database
+    // { new: true } ensures we get the updated user object back
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { avatarUrl: avatarUrl },
+      { new: true }
+    );
+
+    // 3. Send back the success response expected by Profile.jsx
+    res.json({ status: 'updated', user: updatedUser });
+    
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to update avatar" });
+  }
+});
+
 /**
  * GET /getLeaderboard
  * Fetches users sorted by rating in descending order
