@@ -1,37 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 // Layout
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 // Pages
-import Home from './pages/Home';
-import RapidDuel from './pages/RapidDuel';
-import BugHuntArena from './pages/BugHuntArena';
-import ComplexityDuel from './pages/ComplexityDuel';
-import Login from './pages/Login';
-import Profile from './pages/Profile';
+import Home from "./pages/Home";
+import RapidDuel from "./pages/RapidDuel";
+import BugHuntArena from "./pages/BugHuntArena";
+import ComplexityDuel from "./pages/ComplexityDuel";
+import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+import RapidDuelPlay from "./pages/RapidDuelPlay";
 
 // Socket + Utils
-import { io } from 'socket.io-client';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import axios from 'axios';
+import { io } from "socket.io-client";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import BugHuntPlay from "./pages/BugHuntPlay";
+import ComplexityDuelPlay from "./pages/ComplexityDuelPlay";
 
 axios.defaults.withCredentials = true;
 
 /* =======================
-   GLOBAL SOCKET (SAFE)
+   SINGLE GLOBAL SOCKET
 ======================= */
 if (!window.socket) {
   window.socket = io(import.meta.env.VITE_BACKEND_URL, {
     withCredentials: true,
     autoConnect: false,
-    transports: ['websocket'],
+    transports: ["polling", "websocket"],
   });
 }
-
 export const socket = window.socket;
 
 /* =======================
@@ -42,14 +49,11 @@ const ProtectedRoute = ({ user, children }) => {
   return children;
 };
 
-/* =======================
-   APP
-======================= */
 function App() {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
-  /* 🔐 SESSION CHECK (ONCE) */
+  // ✅ session check once
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -67,19 +71,21 @@ function App() {
     checkSession();
   }, []);
 
-  /* 🔌 SOCKET CONNECT AFTER AUTH */
+  // ✅ connect socket only when user exists
   useEffect(() => {
     if (!user) return;
 
     if (!socket.connected) socket.connect();
 
-    socket.on('connect', () => {
-      console.log('🔌 Socket connected:', socket.id);
-      socket.emit('joinRoom', user._id);
-    });
+    const onConnect = () => console.log("🔌 Socket connected:", socket.id);
+    const onDisconnect = () => console.log("🔌 Socket disconnected");
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
 
     return () => {
-      socket.off('connect');
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
     };
   }, [user]);
 
@@ -108,7 +114,16 @@ function App() {
               path="/rapid-duel"
               element={
                 <ProtectedRoute user={user}>
-                  <RapidDuel user={user} setUser={setUser} />
+                  <RapidDuel />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/rapid-duel/play/:matchId"
+              element={
+                <ProtectedRoute user={user}>
+                  <RapidDuelPlay user={user} />
                 </ProtectedRoute>
               }
             />
@@ -121,6 +136,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/bug-hunt/play/:matchId"
+              element={
+                <ProtectedRoute user={user}>
+                  <BugHuntPlay user={user} setUser={setUser} />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/complexity-duel"
@@ -130,16 +153,19 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/complexity-duel/play/:matchId"
+              element={
+                <ProtectedRoute user={user}>
+                  <ComplexityDuelPlay user={user} />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </div>
 
         <Footer />
-
-        <ToastContainer
-          position="bottom-right"
-          autoClose={3000}
-          theme="dark"
-        />
+        <ToastContainer position="bottom-right" autoClose={3000} theme="dark" />
       </div>
     </Router>
   );

@@ -29,11 +29,13 @@ const matchSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['completed', 'abandoned', 'draw'],
+        enum: ['ongoing','completed', 'abandoned', 'draw'],
+        default:'ongoing'
     },
     resultType: {
         type: String,
-        enum: ['firstCorrect', 'timeout']
+        enum: ['firstCorrect', 'timeout','disconnect'],
+        default:null
     }
 })
 
