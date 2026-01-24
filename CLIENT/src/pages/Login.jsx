@@ -7,7 +7,6 @@ import {
   User,
   ArrowRight,
   AlertCircle,
-  CheckCircle2,
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -80,26 +79,20 @@ const Login = ({ setUser }) => {
         : `${import.meta.env.VITE_BACKEND_URL}/signup`;
 
       const payload = isLogin
-        ? {
-            email: formData.email,
-            password: formData.password,
-          }
+        ? { email: formData.email, password: formData.password }
         : formData;
 
       const res = await axios.post(url, payload);
 
-      // ✅ Success
       toast.success(
-        isLogin ? 'Logged in successfully!' : 'Account created successfully!'
+        isLogin
+          ? 'Logged in successfully!'
+          : 'Account created successfully!'
       );
 
-      // Session-based → backend already set cookie
       setUser(res.data.user);
-
       navigate('/');
-
     } catch (err) {
-      // ❌ Backend error handling
       const message =
         err.response?.data?.message ||
         err.response?.data ||
@@ -113,13 +106,21 @@ const Login = ({ setUser }) => {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-4 flex flex-col items-center justify-center relative overflow-hidden">
-      <div className="w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl p-8 shadow-2xl relative z-10">
+    <div className="min-h-screen pt-24 md:pt-32 pb-12 px-4 flex items-center justify-center relative overflow-hidden bg-[#020617]">
+      {/* Background Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
+
+      <div className="w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl relative z-10">
         <div className="text-center mb-8">
-          <Sword className="text-cyan-400 w-10 h-10 rotate-45 mx-auto mb-4" />
-          <h2 className="text-3xl font-black text-white mb-2">
+          <Sword className="text-cyan-400 w-10 h-10 md:w-12 md:h-12 rotate-45 mx-auto mb-4" />
+          <h2 className="text-2xl md:text-3xl font-black text-white mb-2">
             {isLogin ? 'Welcome Back' : 'Join the Arena'}
           </h2>
+          <p className="text-gray-400 text-sm">
+            {isLogin
+              ? 'Enter your credentials to continue.'
+              : 'Create your challenger profile.'}
+          </p>
         </div>
 
         {generalError && (
@@ -131,13 +132,15 @@ const Login = ({ setUser }) => {
         <form onSubmit={handleAuth} className="space-y-4">
           {!isLogin && (
             <div>
-              <div className="relative">
-                <User className="absolute left-3 top-3.5 text-gray-500 w-4 h-4" />
+              <div className="relative group">
+                <User className="absolute left-3 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-cyan-400 transition-colors" />
                 <input
                   type="text"
                   className={`w-full bg-[#1e293b] border ${
-                    errors.username ? 'border-red-500' : 'border-white/5'
-                  } rounded-lg py-3 pl-10 pr-4 text-white`}
+                    errors.username
+                      ? 'border-red-500'
+                      : 'border-white/5 focus:border-cyan-500'
+                  } rounded-lg py-3 pl-10 pr-4 text-white outline-none`}
                   placeholder="Username"
                   value={formData.username}
                   onChange={(e) =>
@@ -146,21 +149,24 @@ const Login = ({ setUser }) => {
                 />
               </div>
               {errors.username && (
-                <p className="text-red-400 text-xs mt-1 ml-1">
+                <p className="text-red-400 text-xs mt-1 ml-1 font-bold">
                   {errors.username}
                 </p>
               )}
             </div>
           )}
 
+          {/* Email */}
           <div>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3.5 text-gray-500 w-4 h-4" />
+            <div className="relative group">
+              <Mail className="absolute left-3 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-cyan-400 transition-colors" />
               <input
                 type="text"
                 className={`w-full bg-[#1e293b] border ${
-                  errors.email ? 'border-red-500' : 'border-white/5'
-                } rounded-lg py-3 pl-10 pr-4 text-white`}
+                  errors.email
+                    ? 'border-red-500'
+                    : 'border-white/5 focus:border-cyan-500'
+                } rounded-lg py-3 pl-10 pr-4 text-white outline-none`}
                 placeholder="Email Address"
                 value={formData.email}
                 onChange={(e) =>
@@ -169,20 +175,23 @@ const Login = ({ setUser }) => {
               />
             </div>
             {errors.email && (
-              <p className="text-red-400 text-xs mt-1 ml-1">
+              <p className="text-red-400 text-xs mt-1 ml-1 font-bold">
                 {errors.email}
               </p>
             )}
           </div>
 
+          {/* Password */}
           <div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3.5 text-gray-500 w-4 h-4" />
+            <div className="relative group">
+              <Lock className="absolute left-3 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-cyan-400 transition-colors" />
               <input
                 type="password"
                 className={`w-full bg-[#1e293b] border ${
-                  errors.password ? 'border-red-500' : 'border-white/5'
-                } rounded-lg py-3 pl-10 pr-4 text-white`}
+                  errors.password
+                    ? 'border-red-500'
+                    : 'border-white/5 focus:border-cyan-500'
+                } rounded-lg py-3 pl-10 pr-4 text-white outline-none`}
                 placeholder="Password"
                 value={formData.password}
                 onChange={(e) =>
@@ -191,7 +200,7 @@ const Login = ({ setUser }) => {
               />
             </div>
             {errors.password && (
-              <p className="text-red-400 text-xs mt-1 ml-1">
+              <p className="text-red-400 text-xs mt-1 ml-1 font-bold">
                 {errors.password}
               </p>
             )}
@@ -202,8 +211,8 @@ const Login = ({ setUser }) => {
             className={`w-full ${
               loading
                 ? 'opacity-60 cursor-not-allowed'
-                : 'hover:-translate-y-1'
-            } bg-gradient-to-r from-cyan-400 to-emerald-400 text-[#020617] font-black py-3 rounded-lg mt-6 shadow-lg transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-sm`}
+                : 'hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(34,211,238,0.4)]'
+            } bg-gradient-to-r from-cyan-400 to-emerald-400 text-[#020617] font-black py-3 rounded-lg mt-6 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-sm`}
           >
             {loading
               ? 'Processing...'
@@ -214,7 +223,7 @@ const Login = ({ setUser }) => {
           </button>
         </form>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center border-t border-white/5 pt-6">
           <p className="text-gray-400 text-sm">
             {isLogin ? 'New Challenger?' : 'Already Registered?'}
             <button
@@ -223,7 +232,7 @@ const Login = ({ setUser }) => {
                 setErrors({});
                 setGeneralError('');
               }}
-              className="ml-2 text-cyan-400 font-bold hover:text-white transition-colors"
+              className="ml-2 text-cyan-400 font-bold hover:text-white transition-colors underline"
             >
               {isLogin ? 'Sign Up' : 'Log In'}
             </button>
