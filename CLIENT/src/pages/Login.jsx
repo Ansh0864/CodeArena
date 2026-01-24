@@ -107,10 +107,10 @@ const Login = ({ setUser }) => {
 
   return (
     <div className="min-h-screen pt-24 md:pt-32 pb-12 px-4 flex items-center justify-center relative overflow-hidden bg-[#020617]">
-      {/* Background Glow */}
+      {/* Background Ambience */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
 
-      <div className="w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl relative z-10">
+      <div className="w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl relative z-10 animate-fade-in">
         <div className="text-center mb-8">
           <Sword className="text-cyan-400 w-10 h-10 md:w-12 md:h-12 rotate-45 mx-auto mb-4" />
           <h2 className="text-2xl md:text-3xl font-black text-white mb-2">
@@ -124,8 +124,9 @@ const Login = ({ setUser }) => {
         </div>
 
         {generalError && (
-          <div className="mb-6 bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg flex items-center gap-2 text-sm font-bold">
-            <AlertCircle size={16} /> {generalError}
+          <div className="mb-6 bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg flex items-center gap-2 text-xs md:text-sm font-bold">
+            <AlertCircle size={16} className="flex-shrink-0" />
+            {generalError}
           </div>
         )}
 
@@ -140,7 +141,7 @@ const Login = ({ setUser }) => {
                     errors.username
                       ? 'border-red-500'
                       : 'border-white/5 focus:border-cyan-500'
-                  } rounded-lg py-3 pl-10 pr-4 text-white outline-none`}
+                  } rounded-lg py-3 pl-10 pr-4 text-white text-sm md:text-base outline-none transition-all placeholder:text-gray-500`}
                   placeholder="Username"
                   value={formData.username}
                   onChange={(e) =>
@@ -166,7 +167,7 @@ const Login = ({ setUser }) => {
                   errors.email
                     ? 'border-red-500'
                     : 'border-white/5 focus:border-cyan-500'
-                } rounded-lg py-3 pl-10 pr-4 text-white outline-none`}
+                } rounded-lg py-3 pl-10 pr-4 text-white text-sm md:text-base outline-none transition-all placeholder:text-gray-500`}
                 placeholder="Email Address"
                 value={formData.email}
                 onChange={(e) =>
@@ -191,7 +192,7 @@ const Login = ({ setUser }) => {
                   errors.password
                     ? 'border-red-500'
                     : 'border-white/5 focus:border-cyan-500'
-                } rounded-lg py-3 pl-10 pr-4 text-white outline-none`}
+                } rounded-lg py-3 pl-10 pr-4 text-white text-sm md:text-base outline-none transition-all placeholder:text-gray-500`}
                 placeholder="Password"
                 value={formData.password}
                 onChange={(e) =>
@@ -212,7 +213,7 @@ const Login = ({ setUser }) => {
               loading
                 ? 'opacity-60 cursor-not-allowed'
                 : 'hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(34,211,238,0.4)]'
-            } bg-gradient-to-r from-cyan-400 to-emerald-400 text-[#020617] font-black py-3 rounded-lg mt-6 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-sm`}
+            } bg-gradient-to-r from-cyan-400 to-emerald-400 text-[#020617] font-black py-3 md:py-3.5 rounded-lg mt-6 shadow-lg transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-xs md:text-sm`}
           >
             {loading
               ? 'Processing...'
@@ -232,7 +233,7 @@ const Login = ({ setUser }) => {
                 setErrors({});
                 setGeneralError('');
               }}
-              className="ml-2 text-cyan-400 font-bold hover:text-white transition-colors underline"
+              className="ml-2 text-cyan-400 font-bold hover:text-white transition-colors underline decoration-cyan-400/30 underline-offset-4"
             >
               {isLogin ? 'Sign Up' : 'Log In'}
             </button>

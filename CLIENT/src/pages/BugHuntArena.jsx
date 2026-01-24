@@ -36,14 +36,9 @@ const BugHuntArena = () => {
 
   // ✅ Socket matchmaking (runs when page opens)
   useEffect(() => {
-    console.log("BugHuntArena mounted. socket.connected =", socket.connected, "id =", socket.id);
-
     if (!socket.connected) socket.connect();
 
-    const startFind = () => {
-      console.log("✅ emitting match:find (bughunter)");
-      socket.emit("match:find", { mode: "bughunter" });
-    };
+    const startFind = () => socket.emit("match:find", { mode: "bughunter" });
 
     if (socket.connected) startFind();
     else socket.once("connect", startFind);
@@ -53,16 +48,11 @@ const BugHuntArena = () => {
     };
 
     const onFound = (data) => {
-      console.log("🟢 match:found", data);
       setLogs((prev) => [...prev.slice(-4), `> Match Found! Room: ${data.roomId}`]);
-
-      navigate(`/bug-hunt/play/${data.matchId}`, {
-        state: data, // {roomId, matchId, questions, players, mode}
-      });
+      navigate(`/bug-hunt/play/${data.matchId}`, { state: data });
     };
 
     const onError = (data) => {
-      console.log("🔴 match:error", data);
       setLogs((prev) => [...prev.slice(-4), `> ERROR: ${data.message}`]);
     };
 

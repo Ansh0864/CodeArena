@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { socket } from "../App";
 import { toast } from "react-toastify";
+import { Timer, User, Cpu, LogOut, CheckCircle2, XCircle } from "lucide-react";
 
 const PER_Q_TIME = 30;
 
@@ -19,13 +20,10 @@ export default function ComplexityDuelPlay({ user }) {
 
   const [idx, setIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState(PER_Q_TIME);
-
   const [selected, setSelected] = useState(null);
   const [locked, setLocked] = useState(false);
-
   const [myCorrect, setMyCorrect] = useState(0);
   const [opCorrect, setOpCorrect] = useState(0);
-
   const [waiting, setWaiting] = useState(false);
   const [result, setResult] = useState(null);
   const [opponentLeft, setOpponentLeft] = useState(false);
@@ -82,8 +80,7 @@ export default function ComplexityDuelPlay({ user }) {
 
     toast.error("Time up!");
     goNextAfterDelay();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft, locked, result]);
+  }, [timeLeft, locked, result, idx, roomId]);
 
   // =========================
   // Socket listeners
@@ -91,11 +88,7 @@ export default function ComplexityDuelPlay({ user }) {
   useEffect(() => {
     const onAnswerResult = (payload) => {
       if (payload.questionIndex !== idx) return;
-
-      if (payload.isCorrect) {
-
-        setMyCorrect((c) => c + 1);
-      }
+      if (payload.isCorrect) setMyCorrect((c) => c + 1);
     };
 
     const onProgress = ({ userId, correct }) => {
@@ -111,7 +104,7 @@ export default function ComplexityDuelPlay({ user }) {
 
     const onOpponentLeft = (data) => {
       setOpponentLeft(true);
-      toast.warn(data?.message || "Opponent left. You can keep playing.");
+      toast.warn(data?.message || "Opponent left. Finish remaining questions to win.");
     };
 
     socket.on("match:answerResult", onAnswerResult);
@@ -168,33 +161,14 @@ export default function ComplexityDuelPlay({ user }) {
   }, [result, myId]);
 
   // =========================
-  // Detect Algorithm/Complexity question shape
+  // Render option safely
   // =========================
-  const isAlgoAnalysis = useMemo(() => {
-    if (!current) return false;
-    const firstOpt = current?.options?.[0];
-    return (
-      typeof current.problemStatement === "string" &&
-      firstOpt &&
-      typeof firstOpt === "object"
-    );
-  }, [current]);
-
-  // ✅ Render option as "Title" + short description (or fallback safely)
   const renderOption = (opt) => {
-    if (typeof opt === "string") {
-      return <span className="font-bold">{opt}</span>;
-    }
+    if (typeof opt === "string") return <span className="font-bold">{opt}</span>;
 
     if (opt && typeof opt === "object") {
-      // Prefer new keys: title + description
       const title =
-        opt.title ||
-        opt.label ||
-        opt.heading ||
-        opt.description || // if only description exists, use it as title
-        opt.approach || // backward compatibility
-        "Option";
+        opt.title || opt.label || opt.heading || opt.description || opt.approach || "Option";
 
       const desc =
         opt.description ||
@@ -205,16 +179,11 @@ export default function ComplexityDuelPlay({ user }) {
 
       return (
         <div className="space-y-1">
-          <div className="text-white font-black leading-snug">
-            {title}
-          </div>
+          <div className="text-white font-black leading-snug">{title}</div>
           {desc ? (
-            <div className="text-gray-300 text-sm font-semibold leading-snug">
-              {desc}
-            </div>
+            <div className="text-gray-300 text-sm font-semibold leading-snug">{desc}</div>
           ) : (
             <div className="text-gray-400 text-sm font-semibold leading-snug">
-              {/* if model didn’t send desc, show nothing harsh */}
               Short description not available.
             </div>
           )}
@@ -235,7 +204,6 @@ export default function ComplexityDuelPlay({ user }) {
           <div className="font-black text-xl">
             Complexity Duel <span className="text-emerald-400">Match</span>
           </div>
-
           <div className="flex items-center gap-4 text-sm font-black">
             <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
               Q {idx + 1}/{total}
@@ -272,37 +240,9 @@ export default function ComplexityDuelPlay({ user }) {
             {current.difficulty?.toUpperCase?.() || "MEDIUM"}
           </div>
 
-          {/* Algorithm Analysis header */}
-          {isAlgoAnalysis ? (
-            <>
-              <h2 className="text-xl md:text-2xl font-black mb-3">
-                {current.title || "Algorithm Analysis"}
-              </h2>
-
-              <p className="text-gray-300 font-bold mb-4">
-                {current.problemStatement}
-              </p>
-
-              {current.constraints && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                  <span className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-black">
-                    Min: {current.constraints.minTimeComplexity}
-                  </span>
-                  <span className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-black">
-                    Max: {current.constraints.maxTimeComplexity}
-                  </span>
-                </div>
-              )}
-
-              <div className="text-gray-400 text-sm font-bold mb-4">
-                Choose the most optimal option.
-              </div>
-            </>
-          ) : (
-            <h2 className="text-xl md:text-2xl font-black mb-6">
-              {current.question}
-            </h2>
-          )}
+          <h2 className="text-xl md:text-2xl font-black mb-6">
+            {current.title || current.question || "Question"}
+          </h2>
 
           {/* Options */}
           <div className="space-y-3">
@@ -319,8 +259,7 @@ export default function ComplexityDuelPlay({ user }) {
                         ? "border-emerald-400 bg-emerald-400/10"
                         : "border-white/10 bg-white/5 hover:bg-white/10"
                     }
-                    ${locked ? "opacity-80 cursor-not-allowed" : ""}
-                  `}
+                    ${locked ? "opacity-80 cursor-not-allowed" : ""}`}
                 >
                   {renderOption(opt)}
                 </button>
@@ -337,9 +276,7 @@ export default function ComplexityDuelPlay({ user }) {
               Leave Match
             </button>
 
-            <div className="text-gray-400 text-sm font-bold">
-              Timer auto-submits.
-            </div>
+            <div className="text-gray-400 text-sm font-bold">Timer auto-submits.</div>
           </div>
         </div>
 
@@ -361,10 +298,8 @@ export default function ComplexityDuelPlay({ user }) {
 
             <div className="text-gray-400 font-bold mt-2">
               Opponent score:{" "}
-              {opponentId
-                ? result.scores?.[opponentId]?.correct ?? opCorrect
-                : opCorrect}{" "}
-              / {total}
+              {opponentId ? result.scores?.[opponentId]?.correct ?? opCorrect : opCorrect} /{" "}
+              {total}
             </div>
 
             <button

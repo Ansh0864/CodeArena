@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { XCircle, Wifi, Globe, Cpu, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -6,11 +5,15 @@ import { socket } from "../App";
 
 const ComplexityDuel = () => {
   const navigate = useNavigate();
+
+  // ===== FUNCTIONAL STATE (UNCHANGED) =====
   const [logs, setLogs] = useState([]);
   const [dots, setDots] = useState(".");
   const [searching, setSearching] = useState(false);
 
-  // UI animation (logs + dots)
+  /* =========================
+     UI ANIMATION (LOGS + DOTS)
+  ========================== */
   useEffect(() => {
     if (!searching) return;
 
@@ -44,14 +47,17 @@ const ComplexityDuel = () => {
     };
   }, [searching]);
 
-  // matchmaking socket wiring
+  /* =========================
+     MATCHMAKING SOCKET LOGIC
+     (UNCHANGED & AUTHORITATIVE)
+  ========================== */
   useEffect(() => {
     if (!searching) return;
 
     if (!socket.connected) socket.connect();
 
     const startFind = () => {
-      setLogs((prev) => [...prev.slice(-4), `> Requesting matchmaking...`]);
+      setLogs((prev) => [...prev.slice(-4), "> Requesting matchmaking..."]);
       socket.emit("match:find", { mode: "complexityDuel" });
     };
 
@@ -91,6 +97,9 @@ const ComplexityDuel = () => {
     };
   }, [navigate, searching]);
 
+  /* =========================
+     ACTIONS
+  ========================== */
   const start = () => {
     setLogs([]);
     setDots(".");
@@ -103,9 +112,13 @@ const ComplexityDuel = () => {
     setLogs([]);
   };
 
+  /* =========================
+     UI (FROM INCOMING FILE)
+  ========================== */
   return (
     <div className="relative pt-32 pb-20 px-6 min-h-screen flex flex-col items-center overflow-hidden bg-[#020617]">
-      {/* Background grid */}
+      
+      {/* Background Grid */}
       <div
         className="absolute inset-0 z-0 opacity-10"
         style={{
@@ -139,23 +152,26 @@ const ComplexityDuel = () => {
         </h1>
 
         <p className="text-gray-500 font-mono text-sm mb-10">
-          {searching ? "ESTIMATED WAIT: 12s" : "Brute force gets rejected."}
+          {searching ? "ESTIMATED WAIT: ~10s" : "Brute force gets rejected."}
         </p>
 
         {/* HUD */}
         <div className="relative bg-[#0f172a]/90 backdrop-blur-md border border-emerald-500/20 rounded-3xl p-1 md:p-10 max-w-2xl mx-auto shadow-[0_0_50px_rgba(16,185,129,0.12)] overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500/50 shadow-[0_0_20px_#34d399] animate-[scan_3s_ease-in-out_infinite]" />
+          
+          <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500/50 animate-[scan_3s_ease-in-out_infinite]" />
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 p-8 relative z-10">
+            
+            {/* Radar */}
             <div className="relative w-40 h-40 flex-shrink-0">
               <div className="absolute inset-0 border-2 border-emerald-500/30 rounded-full animate-[spin_4s_linear_infinite]" />
               <div className="absolute inset-4 border-2 border-dashed border-emerald-500/50 rounded-full animate-[spin_8s_linear_infinite_reverse]" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <Globe className="text-emerald-600 w-16 h-16 opacity-50" />
               </div>
-              <div className="absolute top-1/2 left-1/2 w-full h-[2px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent origin-left animate-[spin_2s_linear_infinite]" />
             </div>
 
+            {/* Logs */}
             <div className="flex-1 text-left bg-black/40 rounded-xl p-4 font-mono text-xs h-40 w-full border border-white/5 flex flex-col justify-end">
               <div className="text-emerald-400 font-bold mb-2 flex items-center gap-2">
                 <Cpu size={14} /> SYSTEM_LOGS
@@ -164,10 +180,7 @@ const ComplexityDuel = () => {
               <div className="space-y-1">
                 {(logs.length ? logs : ["> Ready. Click START MATCHMAKING."]).map(
                   (log, i) => (
-                    <p
-                      key={i}
-                      className="text-emerald-200/80 animate-fade-in truncate"
-                    >
+                    <p key={i} className="text-emerald-200/80 animate-fade-in truncate">
                       {log}
                     </p>
                   )

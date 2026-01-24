@@ -2,10 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { socket } from "../App";
 import { toast } from "react-toastify";
+import { Bug, Cpu, XCircle } from "lucide-react";
 
 const PER_Q_TIME = 30;
 
-export default function BugHuntPlay({ user }) {
+export default function BugHuntArenaPlay({ user }) {
   const navigate = useNavigate();
   const { state } = useLocation();
 
@@ -20,16 +21,13 @@ export default function BugHuntPlay({ user }) {
   const [idx, setIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState(PER_Q_TIME);
 
-  // ✅ number of bugs guess
   const [bugGuess, setBugGuess] = useState(1);
-
   const [locked, setLocked] = useState(false);
   const [myCorrect, setMyCorrect] = useState(0);
   const [opCorrect, setOpCorrect] = useState(0);
 
   const [waiting, setWaiting] = useState(false);
   const [result, setResult] = useState(null);
-
   const [opponentLeft, setOpponentLeft] = useState(false);
 
   const timerRef = useRef(null);
@@ -81,17 +79,13 @@ export default function BugHuntPlay({ user }) {
 
     toast.error("Time up!");
     goNextAfterDelay();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, locked, result]);
 
   // Socket listeners
   useEffect(() => {
     const onAnswerResult = (payload) => {
       if (payload.questionIndex !== idx) return;
-
-      if (payload.isCorrect) {
-        setMyCorrect((c) => c + 1);
-      }
+      if (payload.isCorrect) setMyCorrect((c) => c + 1);
     };
 
     const onProgress = ({ userId, correct }) => {
@@ -136,7 +130,6 @@ export default function BugHuntPlay({ user }) {
 
   const submitBugCount = () => {
     if (locked || result) return;
-
     const val = Number(bugGuess);
     if (!Number.isFinite(val) || val < 0) {
       toast.error("Enter a valid number");
@@ -148,7 +141,7 @@ export default function BugHuntPlay({ user }) {
     socket.emit("match:answer", {
       roomId,
       questionIndex: idx,
-      selectedIndex: val, // ✅ send the number user entered
+      selectedIndex: val,
     });
 
     goNextAfterDelay();
@@ -169,116 +162,56 @@ export default function BugHuntPlay({ user }) {
   if (!current && !result) return null;
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 bg-[#020617] text-white">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="font-black text-xl">
-            Bug Hunt <span className="text-pink-400">Arena</span>
-          </div>
+    <div className="relative min-h-screen pt-24 pb-16 px-6 bg-[#020617] text-white flex flex-col items-center">
+      {/* Header */}
+      <div className="max-w-4xl w-full text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-pink-950/50 border border-pink-500/30 rounded-full text-pink-400 font-bold animate-pulse mb-4">
+          <Bug size={16} /> BUG HUNT ARENA
+        </div>
+        <h1 className="text-4xl font-black text-white">
+          Question {Math.min(idx + 1, total)}/{total} ⏳ {timeLeft}s
+        </h1>
+      </div>
 
-          <div className="flex items-center gap-4 text-sm font-bold">
-            <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
-              Q {Math.min(idx + 1, total)}/{total}
+      {/* Scores */}
+      <div className="grid grid-cols-2 gap-4 mb-6 max-w-4xl w-full">
+        <div className="p-4 rounded-2xl bg-[#0f172a]/80 border border-white/10">
+          <div className="text-gray-400 text-xs font-bold">YOU</div>
+          <div className="text-2xl font-black">{myCorrect}</div>
+        </div>
+        <div className="p-4 rounded-2xl bg-[#0f172a]/80 border border-white/10">
+          <div className="text-gray-400 text-xs font-bold">OPPONENT</div>
+          <div className="text-2xl font-black">{opponentLeft ? "—" : opCorrect}</div>
+        </div>
+      </div>
+
+      {/* Gameplay panel */}
+      {!result && current && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl w-full">
+          {/* LEFT: Code */}
+          <div className="p-6 rounded-3xl bg-[#0f172a]/90 border border-white/10 shadow-xl flex flex-col">
+            <div className="text-gray-400 text-xs font-bold mb-2">
+              MODE: BUG COUNT • {current.difficulty?.toUpperCase() || "EASY"}
             </div>
-            {!result && (
-              <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10">
-                ⏳ {timeLeft}s
+            <h2 className="text-xl md:text-2xl font-black mb-4">{current.title}</h2>
+            <div className="text-gray-200 font-bold mb-4">{current.question}</div>
+            <pre className="bg-black/40 border border-white/10 rounded-2xl p-4 overflow-auto text-sm text-pink-200 flex-1">
+              {current.code}
+            </pre>
+            {Array.isArray(current.bugHints) && current.bugHints.length > 0 && (
+              <div className="mt-4 text-xs text-gray-400 font-bold">
+                Hints: <span className="text-gray-500 font-medium">{current.bugHints.slice(0, 2).join(" • ")}</span>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Opponent left banner */}
-        {opponentLeft && !result && (
-          <div className="mb-4 p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 font-black">
-            Opponent left/disconnected — finish remaining questions to win.
-          </div>
-        )}
-
-        {/* Score */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-            <div className="text-gray-400 text-xs font-bold">YOU</div>
-            <div className="text-2xl font-black">{myCorrect}</div>
-          </div>
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-            <div className="text-gray-400 text-xs font-bold">OPPONENT</div>
-            <div className="text-2xl font-black">
-              {opponentLeft ? "—" : opCorrect}
-            </div>
-          </div>
-        </div>
-
-        {/* Result */}
-        {result && (
-          <div className="p-6 rounded-3xl bg-white/5 border border-white/10 text-center">
-            <div className="text-3xl font-black mb-3">{myResultText}</div>
-
-            <div className="text-gray-300 font-bold">
-              Your score: {result.scores?.[myId]?.correct ?? myCorrect} / {total}
-            </div>
-
-            <div className="text-gray-400 font-bold mt-2">
-              Opponent score:{" "}
-              {opponentId
-                ? result.scores?.[opponentId]?.correct ?? opCorrect
-                : opCorrect}{" "}
-              / {total}
-            </div>
-
-            <button
-              onClick={() => navigate("/")}
-              className="mt-6 px-8 py-3 rounded-xl bg-gradient-to-r from-pink-400 to-purple-400 text-[#020617] font-black hover:opacity-90 transition"
-            >
-              Back Home
-            </button>
-          </div>
-        )}
-
-        {/* Main 2-column Layout */}
-        {!result && current && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* LEFT: Code */}
-            <div className="p-6 rounded-3xl bg-[#0f172a] border border-white/10 shadow-xl">
-              <div className="text-gray-400 text-xs font-bold mb-2">
-                MODE: BUG COUNT • {current.difficulty?.toUpperCase?.() || "EASY"}
-              </div>
-
-              <h2 className="text-xl md:text-2xl font-black mb-4">
-                {current.title || "Count the bugs"}
-              </h2>
-
-              <div className="text-gray-200 font-bold mb-4">
-                {current.question || "How many logical bugs are in this code?"}
-              </div>
-
-              <pre className="bg-black/40 border border-white/10 rounded-2xl p-4 overflow-auto text-sm text-pink-200">
-{current.code}
-              </pre>
-
-              {/* optional hints (you can remove this block if you don't want hints) */}
-              {Array.isArray(current.bugHints) && current.bugHints.length > 0 && (
-                <div className="mt-4 text-xs text-gray-400 font-bold">
-                  Hints:{" "}
-                  <span className="text-gray-500 font-medium">
-                    {current.bugHints.slice(0, 2).join(" • ")}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* RIGHT: Input + Counter */}
-            <div className="p-6 rounded-3xl bg-[#0f172a] border border-white/10 shadow-xl">
-              <div className="text-gray-400 text-xs font-bold mb-2">
-                YOUR ANSWER
-              </div>
-
+          {/* RIGHT: Input */}
+          <div className="p-6 rounded-3xl bg-[#0f172a]/90 border border-white/10 shadow-xl flex flex-col justify-between">
+            <div>
+              <div className="text-gray-400 text-xs font-bold mb-2">YOUR ANSWER</div>
               <div className="text-2xl font-black mb-4">
-                Total Bugs Found:{" "}
-                <span className="text-pink-400">{bugGuess}</span>
+                Total Bugs Found: <span className="text-pink-400">{bugGuess}</span>
               </div>
-
               <div className="flex items-center gap-3 mb-6">
                 <button
                   disabled={locked}
@@ -287,7 +220,6 @@ export default function BugHuntPlay({ user }) {
                 >
                   –
                 </button>
-
                 <input
                   value={bugGuess}
                   disabled={locked}
@@ -296,7 +228,6 @@ export default function BugHuntPlay({ user }) {
                   type="number"
                   min={0}
                 />
-
                 <button
                   disabled={locked}
                   onClick={() => setBugGuess((v) => Number(v) + 1)}
@@ -305,7 +236,9 @@ export default function BugHuntPlay({ user }) {
                   +
                 </button>
               </div>
+            </div>
 
+            <div className="flex flex-col gap-3">
               <button
                 disabled={locked || result}
                 onClick={submitBugCount}
@@ -314,31 +247,41 @@ export default function BugHuntPlay({ user }) {
                 Submit Bug Count
               </button>
 
-              <div className="mt-6 flex items-center justify-between">
-                <button
-                  onClick={leaveMatch}
-                  className="px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-black hover:bg-red-500 hover:text-white transition"
-                >
-                  Leave Match
-                </button>
+              <button
+                onClick={leaveMatch}
+                className="px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-black hover:bg-red-500 hover:text-white transition flex items-center justify-center gap-2"
+              >
+                <XCircle size={16} /> Leave Match
+              </button>
 
-                <div className="text-gray-400 text-sm font-bold">
-                  Timer auto-submits.
+              {waiting && !result && (
+                <div className="text-gray-300 font-black mt-2 text-center">
+                  {opponentLeft ? "Finishing & finalizing match..." : "Waiting for opponent to finish..."}
                 </div>
-              </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Waiting */}
-        {waiting && !result && (
-          <div className="mt-6 text-center text-gray-300 font-black">
-            {opponentLeft
-              ? "Finishing & finalizing match..."
-              : "Waiting for opponent to finish..."}
+      {/* Result */}
+      {result && (
+        <div className="p-6 rounded-3xl bg-[#0f172a]/90 border border-white/10 text-center max-w-md mt-8 shadow-xl">
+          <div className="text-3xl font-black mb-3">{myResultText}</div>
+          <div className="text-gray-300 font-bold">
+            Your score: {result.scores?.[myId]?.correct ?? myCorrect} / {total}
           </div>
-        )}
-      </div>
+          <div className="text-gray-400 font-bold mt-2">
+            Opponent score: {opponentId ? result.scores?.[opponentId]?.correct ?? opCorrect : opCorrect} / {total}
+          </div>
+          <button
+            onClick={() => navigate("/")}
+            className="mt-6 px-8 py-3 rounded-xl bg-gradient-to-r from-pink-400 to-purple-400 text-[#020617] font-black hover:opacity-90 transition"
+          >
+            Back Home
+          </button>
+        </div>
+      )}
     </div>
   );
 }
